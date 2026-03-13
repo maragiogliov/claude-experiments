@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYSTEM//OFFLINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .canvas {
+    position: relative;
+    flex: 1;
+    background: #000;
+    overflow: hidden;
+  }
+
+  canvas#bg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.18;
+  }
+
+  .scanlines {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.35) 2px,
+      rgba(0,0,0,0.35) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .glitch-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 96px);
+    letter-spacing: 0.12em;
+    color: #fff;
+    user-select: none;
+    z-index: 5;
+    white-space: nowrap;
+  }
+
+  .glitch-text::before,
+  .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .glitch-text::before {
+    color: #fff;
+    animation: glitch1 2.4s infinite;
+    clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+    text-shadow: -3px 0 #555;
+  }
+
+  .glitch-text::after {
+    color: #fff;
+    animation: glitch2 2.4s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+    text-shadow: 3px 0 #333;
+  }
+
+  @keyframes glitch1 {
+    0%,48%,52%,100%  { transform: none; opacity: 0; }
+    49%              { transform: translateX(-6px) skewX(-2deg); opacity: 1; }
+    50%              { transform: translateX(4px);  opacity: 1; }
+    51%              { transform: translateX(-2px); opacity: 1; }
+  }
+
+  @keyframes glitch2 {
+    0%,48%,52%,100%  { transform: none; opacity: 0; }
+    49%              { transform: translateX(6px) skewX(2deg); opacity: 1; }
+    50%              { transform: translateX(-4px); opacity: 1; }
+    51%              { transform: translateX(2px);  opacity: 1; }
+  }
+
+  .sub {
+    position: absolute;
+    bottom: 28%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: #666;
+    text-transform: uppercase;
+    z-index: 5;
+    white-space: nowrap;
+    animation: blink 3s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%,90%,100% { opacity: 1; }
+    92%,96% { opacity: 0; }
+  }
+
+  .noise-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: #fff;
+    z-index: 8;
+    animation: scanline 5s linear infinite;
+    opacity: 0;
+  }
+
+  @keyframes scanline {
+    0%   { top: -4px; opacity: 0; }
+    5%   { opacity: 0.4; }
+    95%  { opacity: 0.15; }
+    100% { top: 105%; opacity: 0; }
+  }
+
+  .corner {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-color: #444;
+    border-style: solid;
+    z-index: 6;
+  }
+  .corner.tl { top: 18px; left: 18px; border-width: 1.5px 0 0 1.5px; }
+  .corner.tr { top: 18px; right: 18px; border-width: 1.5px 1.5px 0 0; }
+  .corner.bl { bottom: 18px; left: 18px; border-width: 0 0 1.5px 1.5px; }
+  .corner.br { bottom: 18px; right: 18px; border-width: 0 1.5px 1.5px 0; }
+
+  .hbar {
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #333 20%, #333 80%, transparent);
+    z-index: 4;
+    transform: translateY(38px);
+  }
+
+  .pixel-dots {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 3;
+    pointer-events: none;
+    animation: pixelflash 0.15s steps(1) infinite;
+  }
+
+  @keyframes pixelflash {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .ctrl {
+    background: #000;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .ctrl button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-right: 1px solid #1a1a1a;
+    color: #555;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    padding: 10px 4px;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+    text-transform: uppercase;
+  }
+  .ctrl button:last-child { border-right: none; }
+  .ctrl button:hover, .ctrl button.active { color: #fff; background: #111; }
+
+  .status {
+    background: #000;
+    padding: 8px 16px;
+    font-size: 9px;
+    color: #333;
+    letter-spacing: 0.25em;
+    display: flex;
+    justify-content: space-between;
+  }
+  .status span { animation: blink 2s step-end infinite; }
+  .status span:nth-child(2) { animation-delay: 0.7s; }
+  .status span:nth-child(3) { animation-delay: 1.4s; }
+</style>
+</head>
+<body>
+
+<div class="canvas" id="mainCanvas">
+  <canvas id="bg"></canvas>
+  <div class="scanlines"></div>
+  <div class="noise-line" id="scanLine"></div>
+  <canvas class="pixel-dots" id="pixelCanvas"></canvas>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+  <div class="hbar"></div>
+
+  <div class="glitch-text" data-text="SYSTEM//OFFLINE" id="glitchText">SYSTEM//OFFLINE</div>
+  <div class="sub" id="subText">// SIGNAL LOST — 00:00:00 //</div>
+</div>
+
+<div class="ctrl">
+  <button class="active" onclick="setMode('glitch')">GLITCH</button>
+  <button onclick="setMode('matrix')">MATRIX</button>
+  <button onclick="setMode('wave')">WAVE</button>
+  <button onclick="setMode('static')">STATIC</button>
+</div>
+
+<div class="status">
+  <span>SYS.ERR_0x4F2A</span>
+  <span>FREQ: ---.-- MHz</span>
+  <span>UPTIME: 00:00:00</span>
+</div>
+
+<script>
+const bgCanvas = document.getElementById('bg');
+const bgCtx = bgCanvas.getContext('2d');
+const pxCanvas = document.getElementById('pixelCanvas');
+const pxCtx = pxCanvas.getContext('2d');
+const mainCanvas = document.getElementById('mainCanvas');
+const glitchText = document.getElementById('glitchText');
+const subText = document.getElementById('subText');
+
+let mode = 'glitch';
+let frame = 0;
+let startTime = Date.now();
+
+function resize() {
+  const w = mainCanvas.offsetWidth;
+  const h = mainCanvas.offsetHeight;
+  bgCanvas.width = w; bgCanvas.height = h;
+  pxCanvas.width = w; pxCanvas.height = h;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const COLS = 40, ROWS = 30;
+const matrixChars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ';
+let matrixDrops = Array.from({length: COLS}, () => Math.random() * ROWS);
+let matrixOpacity = Array.from({length: COLS}, () => Math.random());
+
+const PHRASES = [
+  'SYSTEM//OFFLINE', 'ACCESS//DENIED', 'SIGNAL//LOST',
+  'KERNEL//PANIC', 'CORE//DUMP', 'ROOT//OVERRIDE'
+];
+let phraseIdx = 0;
+
+function drawGrid() {
+  const w = bgCanvas.width, h = bgCanvas.height;
+  bgCtx.clearRect(0,0,w,h);
+  bgCtx.strokeStyle = '#ffffff';
+  bgCtx.lineWidth = 0.4;
+  const step = 28;
+  for(let x = 0; x < w; x += step) {
+    bgCtx.beginPath(); bgCtx.moveTo(x,0); bgCtx.lineTo(x,h); bgCtx.stroke();
+  }
+  for(let y = 0; y < h; y += step) {
+    bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(w,y); bgCtx.stroke();
+  }
+}
+
+function drawMatrix() {
+  const w = bgCanvas.width, h = bgCanvas.height;
+  bgCtx.fillStyle = 'rgba(0,0,0,0.15)';
+  bgCtx.fillRect(0,0,w,h);
+  const colW = w / COLS;
+  const rowH = h / ROWS;
+  for(let i = 0; i < COLS; i++) {
+    const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+    const alpha = matrixOpacity[i];
+    bgCtx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`;
+    bgCtx.font = `${Math.floor(rowH * 0.7)}px monospace`;
+    bgCtx.fillText(char, i * colW + 4, matrixDrops[i] * rowH);
+    if (matrixDrops[i] * rowH > h && Math.random() > 0.97) {
+      matrixDrops[i] = 0;
+      matrixOpacity[i] = Math.random() * 0.9 + 0.1;
+    }
+    matrixDrops[i] += 0.4 + Math.random() * 0.2;
+  }
+}
+
+function drawWave() {
+  const w = bgCanvas.width, h = bgCanvas.height;
+  bgCtx.clearRect(0,0,w,h);
+  const t = frame * 0.04;
+  for(let line = 0; line < 14; line++) {
+    const yBase = (h / 15) * (line + 1);
+    const amp = 12 + line * 2;
+    const freq = 0.018 + line * 0.003;
+    const phase = line * 0.6;
+    bgCtx.beginPath();
+    for(let x = 0; x <= w; x += 3) {
+      const y = yBase + Math.sin(x * freq + t + phase) * amp + Math.sin(x * freq * 2.3 + t * 1.7) * amp * 0.3;
+      if(x === 0) bgCtx.moveTo(x, y); else bgCtx.lineTo(x, y);
+    }
+    const lum = 50 + line * 12;
+    bgCtx.strokeStyle = `rgba(${lum},${lum},${lum},0.6)`;
+    bgCtx.lineWidth = 0.8;
+    bgCtx.stroke();
+  }
+}
+
+function drawStatic() {
+  const w = pxCanvas.width, h = pxCanvas.height;
+  pxCtx.clearRect(0,0,w,h);
+  const imgData = pxCtx.createImageData(w, h);
+  const data = imgData.data;
+  for(let i = 0; i < data.length; i += 4) {
+    const v = Math.random() > 0.5 ? (Math.random() * 160) : 0;
+    data[i] = data[i+1] = data[i+2] = v;
+    data[i+3] = v > 0 ? 255 : 0;
+  }
+  pxCtx.putImageData(imgData, 0, 0);
+}
+
+function drawGlitchStripes() {
+  if(Math.random() > 0.93) {
+    const w = pxCanvas.width, h = pxCanvas.height;
+    pxCtx.clearRect(0,0,w,h);
+    const numStripes = Math.floor(Math.random() * 4) + 1;
+    for(let s = 0; s < numStripes; s++) {
+      const y = Math.random() * h;
+      const sh = Math.random() * 12 + 3;
+      const shift = (Math.random() - 0.5) * 30;
+      pxCtx.save();
+      pxCtx.drawImage(bgCanvas, 0, y, w, sh, shift, y, w, sh);
+      pxCtx.restore();
+      pxCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.15})`;
+      pxCtx.fillRect(0, y, w, sh);
+    }
+    setTimeout(() => pxCtx.clearRect(0,0,pxCanvas.width,pxCanvas.height), 80);
+  } else {
+    pxCtx.clearRect(0,0,pxCanvas.width,pxCanvas.height);
+  }
+}
+
+const subs = ['// SIGNAL LOST //','// NO CARRIER //','// ERR 0xDEAD //','// REBOOT... //','// NULL PTR //'];
+
+function updateStatus() {
+  const elapsed = Date.now() - startTime;
+  const s = Math.floor(elapsed/1000) % 60;
+  const m = Math.floor(elapsed/60000) % 60;
+  const h = Math.floor(elapsed/3600000);
+  const fmt = n => String(n).padStart(2,'0');
+  document.querySelectorAll('.status span')[2].textContent = `UPTIME: ${fmt(h)}:${fmt(m)}:${fmt(s)}`;
+  const freq = (120 + Math.sin(elapsed/800)*30 + Math.random()*5).toFixed(2);
+  document.querySelectorAll('.status span')[1].textContent = `FREQ: ${freq} MHz`;
+}
+
+function tick() {
+  frame++;
+
+  if(mode === 'glitch') {
+    if(frame % 2 === 0) drawGrid();
+    drawGlitchStripes();
+    if(frame % 90 === 0) {
+      phraseIdx = (phraseIdx + 1) % PHRASES.length;
+      glitchText.textContent = PHRASES[phraseIdx];
+      glitchText.setAttribute('data-text', PHRASES[phraseIdx]);
+      subText.textContent = subs[Math.floor(Math.random()*subs.length)];
+    }
+  } else if(mode === 'matrix') {
+    drawMatrix();
+    pxCtx.clearRect(0,0,pxCanvas.width,pxCanvas.height);
+  } else if(mode === 'wave') {
+    drawWave();
+    pxCtx.clearRect(0,0,pxCanvas.width,pxCanvas.height);
+  } else if(mode === 'static') {
+    bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+    drawStatic();
+  }
+
+  if(frame % 3 === 0) updateStatus();
+  requestAnimationFrame(tick);
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.ctrl button').forEach((b,i) => {
+    b.classList.toggle('active', ['glitch','matrix','wave','static'][i] === m);
+  });
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  pxCtx.clearRect(0,0,pxCanvas.width,pxCanvas.height);
+
+  const labels = {
+    glitch: ['SYSTEM//OFFLINE','ACCESS//DENIED','KERNEL//PANIC'],
+    matrix: ['DATA//STREAM','OVERFLOW//00','INJECT//CODE'],
+    wave:   ['SIGNAL//WAVE','FREQUENCY//OK','SCAN//ACTIVE'],
+    static: ['NOISE//FIELD','WHITE//NOISE','CHAOS//MODE'],
+  };
+  const arr = labels[m];
+  const phrase = arr[Math.floor(Math.random()*arr.length)];
+  glitchText.textContent = phrase;
+  glitchText.setAttribute('data-text', phrase);
+}
+
+tick();
+</script>
+
+
+</body>
+</html>
